@@ -15,16 +15,21 @@ server.use(express.json());
 
 
 server.post('/api/users', (req, res) => {
-    const userInfo = req.body;
+    const user = req.body;
+    if (!user.name || !user.bio) {
+        res.status(400).json({ message: 'User object must contain a name and bio.'}).end()
 
-    db.add(userInfo)
-        .then(users => {
-            res.status(201).json({ success: true, users});
-        })
-        .catch(err => {
-            res.status(500).json({ success: false, err});
-        })
-})
+    }   else {
+            db.insert(user)
+                .then(id => {
+                    res.status(201).json({ success: true, ...user });
+                })
+                .catch(err => {
+                    res.status(500).json({ success: false, err});
+                })
+    }
+
+});
 
 
 server.get('/api/users', (req, res) => {
@@ -35,19 +40,23 @@ server.get('/api/users', (req, res) => {
         .catch(err => {
             res.status(500).json({ error: "The user with the specified ID does not exist."})
         })
-})
+});
 
 server.get('/api/users/:id', (req, res) => {
-    const { id } = req.params;
+    const id  = req.params.id;
 
-    db.find()
+    db.findById(id)
         .then(user => {
-            res.status(200).json(user);
+            if (!user) {
+                res.status(404).json({ err: 'That user ID does not exist on this server.'});
+            }   else {
+                res.status(200).json(user);
+            }
         })
         .catch(err => {
             res.status(500).json({message: "The users information could not be retrieved."})
         })
-})
+});
 
 server.delete('/api/users/:id', (req, res) => {
     const { id } = req.params;
